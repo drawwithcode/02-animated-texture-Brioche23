@@ -4,6 +4,9 @@ Creative Coding 2021-22
 
 Assignment_02
 "Create an animated texture"
+
+KEYS
+s           : save a png of the artwork
 */
 
 //  Creating a class Particle
@@ -97,8 +100,9 @@ function draw() {
 
 function randomizeHSB(mode, noiseOffset) {
   //  noiseOffset used to give each particle a differnet colour
-  hue = noise(seed + noiseOffset) * 360;
-  sat = noise(seed + 20) * 255;
+  hue = noise(seed + noiseOffset) * 720;
+  // Limiting the minimum saturation at 50
+  sat = noise(seed + 20) * 50 + 155;
   // Limiting the minimum brightness at 50
   bri = noise(seed + 30) * 50 + 50;
 
@@ -134,4 +138,14 @@ function createGrid() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   createGrid();
+}
+
+// Function to save the artwork with today's date
+function keyPressed() {
+  let d = day();
+  let m = month();
+  let y = year();
+
+  if (key == "s" || key == "S")
+    saveCanvas(y + "_" + m + "_" + d + "_Texture", "png");
 }
