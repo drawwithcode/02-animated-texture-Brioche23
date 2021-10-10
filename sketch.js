@@ -1,120 +1,137 @@
+/*
+Brioschi Alessio
+Creative Coding 2021-22
+
+Assignment_02
+"Create an animated texture"
+*/
+
 //  Creating a class Particle
 //  The moving particles will compose the texture
-
 class Particle {
   // Setting the particle parameters
-  constructor() {
+  constructor(x, y) {
     //  Creates a 2D vector, an entity with an x and a y
-    this.vector = createVector(random(width), random(height));
-    this.vectorOld = this.vector.copy();
-    //  Randomize the size of the particles
+    this.vector = createVector(x, y);
+    //  Randomize the stroke of the particles
     this.stepSize = random(1, 5);
-    //  The angle will be defined in the setNoise function
-    this.angle;
-    this.isOutside = false;
-
-    // Random hue???
-    this.color;
+    //  The dimension of the particles
+    this.rad;
+    //  Randomize the type of the shape
+    this.type = floor(random(0, 2));
+    //  Used to offset the noise of each particle's color
+    this.colorOffset = random(100);
   }
 
-  movePart(strokeWidth) {
-    // Define the motion of the particles
-    this.vector.x += sin(this.angle) * this.stepSize;
-    this.vector.y += cos(this.angle) * this.stepSize;
+  //  Function to set visual properties of the particle
+  setPart(strokeWidth, noiseStrength) {
+    //  Size and stroke color change continuously
+    this.rad = noise(seed) * noiseStrength;
+    stroke(randomizeHSB(1, this.colorOffset));
 
-    //  Checks if the particle is outside of the canvas
-    this.isOutside =
-      this.vector.x < 0 ||
-      this.vector.x > width ||
-      this.vector.y < 0 ||
-      this.vector.y > height;
-
-    //  If the Particle is outside reset the vector to be within the canvas
-    if (this.isOutside) {
-      this.vector.set(random(width), random(height));
-      this.vectorOld = this.vector.copy();
-    }
-
-    // if (this.vector.x < -10) this.vector.x = this.vectorOld.x = width + 10;
-    // if (this.vector.x > -width + 10) this.vector.x = this.vectorOld.x = -10;
-    // if (this.vector.y < -10) this.vector.y = this.vectorOld.y = height + 10;
-    // if (this.vector.y > -height + 10) this.vector.y = this.vectorOld.y = -10;
-
-    //  Define
     strokeWeight(strokeWidth * this.stepSize);
-    //line(this.vectorOld.x, this.vectorOld.y, this.vector.x, this.vector.y);
-    circle(this.vector.x, this.vector.y, this.stepSize);
 
-    this.vectorOld = this.vector.copy();
-    this.isOutside = false;
+    //  The particles can be squares or circles
+    if (this.type == 0) ellipse(this.vector.x, this.vector.y, this.rad);
+    else rect(this.vector.x, this.vector.y, this.rad);
+
+    //  Call the move function
+    this.movePart();
   }
 
-  setNoise(strokeWidth, noiseScale, noiseStrength) {
-    this.angle =
-      noise(this.vector.x / noiseScale, this.vector.y / noiseScale) *
-      noiseStrength;
-
-    this.movePart(strokeWidth);
+  //  Function to move the particles
+  movePart() {
+    // Define the motion of the particles --> Slight wiggle
+    this.vector.x += noise(seed + 4) * random(-1, 1);
+    this.vector.y += noise(seed + 3) * random(-1, 1);
   }
 }
 
-// Initializing Array and particles' parameters
+// Initializing Array, grid and particles' variables
 let particles = [];
-let partCount = 500;
-let noiseScale = 200;
-let noiseStrength = 10;
-let overlayAlpha = 10;
+let noiseScale = 300;
+let noiseStrength = 50;
 let partAlpha = 90;
 let strokeWidth = 1;
-let seed = 30;
-let increment = 0.02;
+let seed = 20;
 let oldSeed = seed;
-let h = 0;
-let s = 0;
-let b = 0;
+let increment = 0.01;
+let hue = 0;
+let sat = 0;
+let bri = 0;
+let w;
+let h;
+let columns;
+let rows;
+let board;
+let n_rows;
+let n_cols;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  frameRate(60);
+  angleMode(DEGREES);
+  ellipseMode(CENTER);
+  rectMode(CENTER);
+  //  HSB comes in handy to keep Saturation and Brightness consistent
+  colorMode(HSB, 360, 255, 100);
+  noFill();
 
-  // Filling the array with particles
-  for (let i = 0; i < partCount; i++) {
-    particles[i] = new Particle();
-  }
+  //  Calling the grid function
+  createGrid();
 }
 
 function draw() {
-  background(255, overlayAlpha);
-  //noStroke();
+  //  randomizing BG color
+  background(randomizeHSB(2, 0));
 
+  //  Double forEach because it's a 2D array
   particles.forEach((p) => {
-    p.setNoise(strokeWidth, noiseScale, noiseStrength);
+    p.forEach((pp) => {
+      pp.setPart(strokeWidth, noiseStrength);
+    });
   });
 
-  //seed = floor(seed);
-
-  noiseSeed(seed);
+  //  Gradually incrementing the noise seed
   seed += increment;
-  // if (b > 50) background(100, overlayAlpha);
-  // else background(200, overlayAlpha);
-
-  if (floor(seed) - oldSeed == 1) {
-    oldSeed = floor(seed);
-    console.log("seed:", seed);
-    // Setting the particles color
-    colorMode(HSB);
-    h = random(360);
-    s = random(100);
-    b = random(100);
-    stroke(color(h, s, b, partAlpha));
-    h = random(360);
-    s = random(100);
-    b = random(100);
-    fill(color(h, s, b, partAlpha));
-    colorMode(RGB);
-  }
 }
 
+function randomizeHSB(mode, noiseOffset) {
+  //  noiseOffset used to give each particle a differnet colour
+  hue = noise(seed + noiseOffset) * 360;
+  sat = noise(seed + 20) * 255;
+  // Limiting the minimum brightness at 50
+  bri = noise(seed + 30) * 50 + 50;
+
+  //  Mode 2 --> Same S and B but opposite Hue for the Background
+  if (mode == 1) return color(hue, sat, bri);
+  else return color(hue - 180, sat, bri);
+}
+
+//  Function to arrange the particles on a grid
+function createGrid() {
+  //  Random int number of rows and columns
+  n_rows = floor(random(30, 50));
+  n_cols = floor(random(40, 60));
+
+  //  Subdividing the resolution exactly, to make te grid (almost) perfectly fit the res
+  //  Adding 100 just to make sure it completely fits
+  w = (width + 100) / n_cols;
+  h = (height + 100) / n_rows;
+
+  //  Counting the numbers of particles needed to fill the grid
+  let tot_particles = n_rows * n_cols;
+
+  //  Creating a 2D array
+  for (let i = 0; i < tot_particles; i++) particles[i] = new Array();
+
+  //  Filling the Array with particles
+  for (let j = 0; j < n_cols; j++)
+    for (let i = 0; i < n_rows; i++)
+      particles[j][i] = new Particle(j * w, i * h); //  index*subdivision  = x or y coordinate
+}
+
+//  The artwork resizes automatically
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  createGrid();
 }
