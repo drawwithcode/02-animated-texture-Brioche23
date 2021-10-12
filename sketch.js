@@ -23,14 +23,14 @@ class Particle {
     //  Randomize the type of the shape
     this.type = floor(random(0, 2));
     //  Used to offset the noise of each particle's color
-    this.colorOffset = random(100);
+    this.noiseOffset = random(50);
   }
 
   //  Function to set visual properties of the particle
   setPart(strokeWidth, noiseStrength) {
     //  Size and stroke color change continuously
-    this.rad = noise(seed) * noiseStrength;
-    stroke(randomizeHSB(1, this.colorOffset));
+    this.rad = noise(seed + this.noiseOffset) * noiseStrength;
+    stroke(randomizeHSB(1, this.noiseOffset));
 
     strokeWeight(strokeWidth * this.stepSize);
 
@@ -100,7 +100,8 @@ function draw() {
 
 function randomizeHSB(mode, noiseOffset) {
   //  noiseOffset used to give each particle a differnet colour
-  hue = noise(seed + noiseOffset) * 720;
+  hue = noise(seed + noiseOffset) * 360; //Hue range 180 - 540
+  console.log("hue:", hue);
   // Limiting the minimum saturation at 50
   sat = noise(seed + 20) * 50 + 155;
   // Limiting the minimum brightness at 50
@@ -108,7 +109,7 @@ function randomizeHSB(mode, noiseOffset) {
 
   //  Mode 2 --> Same S and B but opposite Hue for the Background
   if (mode == 1) return color(hue, sat, bri);
-  else return color(hue - 180, sat, bri);
+  else return color(hue - 180, sat, bri); // Hue range 0-360?
 }
 
 //  Function to arrange the particles on a grid
